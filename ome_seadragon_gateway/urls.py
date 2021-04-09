@@ -13,6 +13,7 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
+from django.conf import settings
 from django.urls import path, re_path
 from django.conf.urls import include
 from django.contrib import admin
@@ -60,15 +61,15 @@ urlpatterns = {
     re_path(r'api/datasets/(?P<dataset_id>[0-9]+)/', DatasetDetailsWrapper.as_view({'get': 'get'})),
     re_path(r'api/datasets/(?P<dataset_id>[0-9]+)/images/', DatasetDetailsWrapper.as_view({'get': 'get_with_images'})),
     re_path(r'api/datasets/(?P<dataset_id>[0-9]+)/images/full_series/',
-         DatasetDetailsWrapper.as_view({'get': 'get_with_full_series'})),
+            DatasetDetailsWrapper.as_view({'get': 'get_with_full_series'})),
 
     re_path(r'api/images/', ImagesQuickListWrapper.as_view({'get': 'get'})),
     re_path(r'api/images/full_series/',
-         ImagesQuickListWrapper.as_view({'get': 'get_with_full_series'})),
+            ImagesQuickListWrapper.as_view({'get': 'get_with_full_series'})),
     re_path(r'api/images/(?P<image_id>[0-9]+)/',
-         ImageDetailsWrapper.as_view({'get': 'get'})),
+            ImageDetailsWrapper.as_view({'get': 'get'})),
     re_path(r'api/images/(?P<image_id>[0-9]+)/rois/',
-         ImageDetailsWrapper.as_view({'get': 'get_with_rois'})),
+            ImageDetailsWrapper.as_view({'get': 'get_with_rois'})),
 
     # TAGs
     path(r'api/annotations/', AnnotationsWrapper.as_view({'get': 'get'})),
@@ -77,7 +78,8 @@ urlpatterns = {
     re_path(r'api/annotations/(?P<query>[\w\-.]+)/images/$', AnnotationsWrapper.as_view({'get': 'find_with_images'})),
     re_path(r'api/tagsets/(?P<tagset_id>[0-9]+)/', TagsetDetailsWrapper.as_view({'get': 'get'})),
     re_path(r'api/tagsets/(?P<tagset_id>[0-9]+)/tags/', TagsetDetailsWrapper.as_view({'get': 'get_with_tags'})),
-    re_path(r'api/tagsets/(?P<tagset_id>[0-9]+)/tags/images/$', TagsetDetailsWrapper.as_view({'get': 'get_with_images'})),
+    re_path(r'api/tagsets/(?P<tagset_id>[0-9]+)/tags/images/$',
+            TagsetDetailsWrapper.as_view({'get': 'get_with_images'})),
     re_path(r'api/tags/(?P<tag_id>[0-9]+)/$', TagDetailsWrapper.as_view({'get': 'get'})),
     re_path(r'api/tags/(?P<tag_id>[0-9]+)/images/$', TagDetailsWrapper.as_view({'get': 'get_with_images'})),
 
@@ -94,8 +96,9 @@ urlpatterns = {
     # admin
     path('admin/', admin.site.urls),
 
-    # OAuth2Autentication admin
-    path('oauth2/', include('oauth2_provider.urls', namespace='oauth2')),
 }
+# OAuth2Autentication admin
+if settings.AUTH_TYPE == 'oauth2':
+    urlpatterns.add(path('oauth2/', include('oauth2_provider.urls', namespace='oauth2')))
 
 urlpatterns = format_suffix_patterns(urlpatterns)

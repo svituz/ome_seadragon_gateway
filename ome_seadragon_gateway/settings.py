@@ -17,7 +17,6 @@ from yaml.error import YAMLError
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # load YAML configuration, look for
 _CONF_FILE_PATH = os.environ.get('DJANGO_CONFIG_FILE',
                                  os.path.join(BASE_DIR, 'config', 'config.yaml'))
@@ -30,7 +29,6 @@ except (IOError, ScannerError, YAMLError):
 if cfg is None:
     sys.exit('Config file not found')
 
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = cfg['django']['secret_key']
 
@@ -41,7 +39,7 @@ ALLOWED_HOSTS = cfg['django']['allowed_hosts']
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,11 +53,10 @@ INSTALLED_APPS = (
     'ome_data_gw',
     'ome_tags_gw',
     'static_files_gw',
-    'examples',
-    'oauth2_provider'
-)
+    'examples'
+]
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,7 +65,7 @@ MIDDLEWARE = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-)
+]
 
 ROOT_URLCONF = 'ome_seadragon_gateway.urls'
 
@@ -109,13 +106,13 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'verbose'
         },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/ome_seadragon_gw.log',
-            'maxBytes': 1024*1024*10,
+            'maxBytes': 1024 * 1024 * 10,
             'backupCount': 10,
             'formatter': 'verbose',
         }
@@ -134,17 +131,35 @@ LOGGING = {
     }
 }
 
-# Django REST Framework OAUTH2
-OAUTH2_PROVIDER = {
-    # this is the list of available scopes
-    'SCOPES': {'read': 'Read scope'}
-}
+# Authentication conf
+assert cfg['auth']['type'] in ('oauth2', 'keycloak') or \
+       'Authentication type can be oauth2 or keycloak. Check your configuration'
+AUTH_TYPE = cfg['auth']['type']
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-    )
-}
+if AUTH_TYPE == 'oauth2':
+    INSTALLED_APPS.append('oauth2_provider')
+    # Django REST Framework OAUTH2
+    OAUTH2_PROVIDER = {
+        # this is the list of available scopes
+        'SCOPES': {'read': 'Read scope'}
+    }
+
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': (
+            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        )
+    }
+# from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+else:
+    MIDDLEWARE.append('django-keycloak-auth.middleware.KeycloakMiddleware')
+    
+    KEYCLOAK_EXEMPT_URIS = []
+    KEYCLOAK_CONFIG = {
+        'KEYCLOAK_SERVER_URL': cfg['auth']['keycloak_server_url'],
+        'KEYCLOAK_REALM': cfg['auth']['keycloak_realm'],
+        'KEYCLOAK_CLIENT_ID': cfg['auth']['keycloak_client_id'],
+        'KEYCLOAK_CLIENT_SECRET_KEY': cfg['auth']['keycloak_client_secret_key'],
+    }
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
@@ -170,7 +185,6 @@ elif cfg['database']['engine'] == 'postgresql':
 else:
     sys.exit('A valid database engine should be provided, exit')
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
@@ -184,7 +198,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
@@ -193,7 +206,6 @@ STATIC_ROOT = cfg['django']['static_root']
 STATIC_URL = '/django/static/'
 
 SESSION_COOKIE_NAME = cfg['django']['session_cookie']
-
 
 if 'cors_whitelist' in cfg['django']:
     CORS_ORIGIN_ALLOW_ALL = False
